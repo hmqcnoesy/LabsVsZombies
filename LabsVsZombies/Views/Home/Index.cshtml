@@ -1,0 +1,211 @@
+﻿@model IEnumerable<string>
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Labs vs. Zombies</title>
+    <link rel="stylesheet" href="~/static/normalize.css" />
+    <link rel="stylesheet" href="~/static/lvz.css" />
+</head>
+<body>
+    <header><img src="~/static/zombie.png" /><a href="#">Labs vs. Zombies</a></header>
+    <div class="responsive-table">
+        <table>
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Service</th>
+                    <th>Service Status</th>
+                    <th>BG Process</th>
+                    <th>Nautilus Process</th>
+                    <th>DB Connection</th>
+                    <th>Background Tasks</th>
+                    <th>Instrument Files</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var bgp in Model)
+                {
+                    <tr data-service-name="@bgp">
+                        <td><img data-field="IsZombie" style="width:28px" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" /></td>
+                        <td><a data-field="ServiceName" href="@Url.Action("Info", "Home", new { serviceName = bgp })">@bgp</a></td>
+                        <td><span data-field="ServiceStatus"></span></td>
+                        <td><span data-field="BackgroundProcessExists"></span></td>
+                        <td><span data-field="NautilusProcessResponding"></span></td>
+                        <td><span data-field="NautilusDbSessionExists"></span></td>
+                        <td><span data-field="BackgroundTasks"></span></td>
+                        <td><span data-field="InstrumentFiles"></span></td>
+                        <td><a href="#" data-refresh="@bgp">Refresh</a>
+                            @if (ViewBag.IsAdmin)
+                            {
+                                <a href="#" data-restart="@bgp">Restart</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <p id="pNotification" hidden style="text-align:center">
+        <a class="warning" href="mailto:@(ViewBag.To)?subject=Labs vs. Zombies Notification,body=@Url.Action("Index", "Home")">Send a notification about current BGP zombies</a>
+    </p>
+
+
+    <hr />
+
+    <p>
+        Labs vs. Zombies allows those with proper permissions to identify and correct zombie background processors in Nautilus LIMS.
+        The list of AD groups with permissions to correct zombie BGPs is in the web application's "web.config" file.  Currently that list is:
+
+        <ul>
+            @foreach (var group in ViewBag.AdGroups)
+            {
+                <li>@group</li>
+            }
+        </ul>
+    </p>
+
+    <p>
+        Visitors to the page who are not members of any of the allowed groups have the option of notifying a list also saved in the web.config:
+        <a href="mailto:@(ViewBag.To)?subject=Labs vs. Zombies Notification,body=">Send a notification</a>
+    </p>
+
+    <hr />
+
+    <p>
+        A properly functioning Nautilus BGP will consist of the following:
+        <ol>
+            <li>A windows service, with a <span class="ok">Running</span> status</li>
+            <li>A NautilusBackground.exe process, which is the process of the running service</li>
+            <li>A Nautilus.exe process in a <span class="ok">Responding</span> state (this process is a child process of NautilusBackground.exe and does all the actual work of the BGP)</li>
+            <li>A live Oracle database connection from the above mentioned Nautilus.exe</li>
+        </ol>
+    </p>
+
+    <hr />
+
+    <p>
+        Indications of a zombie BGP (or otherwise non-functioning BGP) include the following:
+        <ol>
+            <li>The windows service is not running or not responding</li>
+            <li>The NautilusBackground.exe process does not have a child Nautilus.exe process</li>
+            <li>The Nautilus.exe process does not have a database connection - this is a typical zombie BGP, where the process is running but never does anything</li>
+            <li>The Nautilus.exe process is not responding (stuck due to bad parsing files, stuck background table records, etc.)</li>
+            <li>The Nautilus.exe process has lost its database connection (due to network interruptions, database issues, etc.)</li>
+            <li>Records are accumulating in the lims.background table (or lims.background_# tables)</li>
+            <li>Files are accumulating in instrument parsing folders</li>
+        </ol>
+    </p>
+
+    <hr />
+
+    <p>
+        The Labs vs. Zombies page looks at each of the above mentioned indications to attempt to identify zombie BGPs using the following process:
+        <ol>
+            <li>Get a list of all windows services on the localhost whose name starts with DEFBGP or BGP</li>
+            <li>Check each service in the list for a "Running" status</li>
+            <li>Check that each service's NautilusBackground.exe is running</li>
+            <li>Check that each NautilusBackground.exe process has a child Nautilus.exe process</li>
+            <li>Check that each Nautilus.exe process is responding</li>
+            <li>
+                Check that each Nautilus.exe process has a database connection - connection string is determined by the following:
+                <ol>
+                    <li>The service name is split on the '#' character, the database name is the third token</li>
+                    <li>A connection string with a name matching this third token is looked up in the web application's web.config</li>
+                    <li>The database connection is made and a list of gv$session.process values is queried, where the session is in lims.current_session and the lims.lims_session.session_type is 'B' </li>
+                    <li>The list of session IDs from Oracle allows identification of Nautilus.exe processes without a database connection</li>
+                </ol>
+            </li>
+            <li>Using the already-established database connection, check the record count from the lims.background or lims.background_# table for the BGP</li>
+            <li>While connected to the database query for a list of all parsing locations assigned to the BGP, and the corresponding filename extensions</li>
+            <li>Inspect the instrument folders to get a count of any accumulated files with a matching filname extension</li>
+
+        </ol>
+    </p>
+
+    <hr />
+
+    <p>
+        Depending on the results of the above mentioned checks, the Labs vs. Zombies page may recommend specific actions and give authorized users methods to perform them.
+    </p>
+
+    <hr />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var bgpRows = document.querySelectorAll('tr[data-service-name]');
+            for (var i = 0; i < bgpRows.length; i++) {
+                var serviceName = bgpRows[i].getAttribute('data-service-name');
+                fetch('@Url.Action("GetService", "Home", null)' + '?serviceName=' + encodeURIComponent(serviceName))
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.json();
+                    })
+                    .then(data => loadBgpInfo(data))
+                    .catch(error => {
+                        alert(error);
+                    });
+
+                bgpRows[i].querySelector('a[data-refresh]').addEventListener('click', function (e) {
+                    fetch('@Url.Action("GetService", "Home", null)' + '?serviceName=' + encodeURIComponent(e.target.getAttribute("data-refresh")))
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.json();
+                    })
+                    .then(data => loadBgpInfo(data))
+                    .catch(error => {
+                        alert(error);
+                    });
+                });
+
+                bgpRows[i].querySelector('a[data-restart]').addEventListener('click', function (e) {
+                    var data = new FormData();
+                    data.append('serviceName', e.target.getAttribute("data-restart"));
+                    fetch('@Url.Action("RestartBgp", "Home")', { method: 'post', body: data })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.json();
+                    })
+                    .then(data => loadBgpInfo(data))
+                    .catch(error => {
+                        alert(error);
+                    });
+                });
+            }
+        });
+
+        function loadBgpInfo(bgp) {
+            pNotification.querySelector('a').href += '\r\n\r\n' + bgp.ServiceName + ' Service Status: ' + bgp.ServiceStatus
+                + ', BG Process: ' + bgp.BackgroundProcessExists + ', Nautilus Process: ' + bgp.NautilusProcessResponding
+                + ', DB Connection: ' + bgp.NautilusDbSessionExists + ', Background Tasks: ' + bgp.BackgroundTasks.length
+                + ', Instrument Files: ' + bgp.InstrumentFiles.length;
+
+            if (bgp.IsZombie) pNotification.removeAttribute('hidden');
+
+            var tr = document.querySelector('tr[data-service-name="' + bgp.ServiceName + '"]');
+            for (var prop in bgp) {
+                var element = tr.querySelector('[data-field="' + prop + '"]');
+                if (element == null) continue;
+
+                if (Array.isArray(bgp[prop])) {
+                    element.innerHTML = bgp[prop].length;
+                    element.setAttribute('data-count', bgp[prop].length);
+                }
+                else if (element.tagName != "IMG" && typeof (bgp[prop]) === "boolean") {
+                    element.setAttribute('data-value', bgp[prop] ? "Yes" : "No");
+                    element.innerHTML = bgp[prop] ? "Yes" : "No";
+                } else if (element.tagName == "IMG" && typeof (bgp[prop]) === "boolean") {
+                    element.src = bgp[prop] ? "@Url.Content("~/static/zombiesmall.png")" : "@Url.Content("~/static/flowersmall.png")";
+                } else {
+                    element.innerHTML = bgp[prop];
+                    element.setAttribute('data-value', bgp[prop]);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
