@@ -1,0 +1,271 @@
+﻿@model IEnumerable<string>
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Labs vs. Zombies</title>
+    <link rel="icon" type="image/png" href="~/static/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="~/static/favicon-16x16.png" sizes="16x16" />
+    <link rel="stylesheet" href="~/static/normalize.css" />
+    <link rel="stylesheet" href="~/static/lvz.css" />
+</head>
+<body>
+    <header><img src="~/static/zombie.png" /><a href="#">Labs vs. Zombies</a></header>
+    <div class="responsive-table">
+        <table>
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Service</th>
+                    <th>Last Refresh</th>
+                    <th>Service Status</th>
+                    <th>BG Process</th>
+                    <th>Nautilus Process</th>
+                    <th>DB Connection</th>
+                    <th>Instrument Files</th>
+                    <th>Background Tasks</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var bgp in Model)
+                {
+                    <tr data-service-name="@bgp">
+                        <td><img data-field="IsZombie" style="width:28px" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" /></td>
+                        <td><a data-field="ServiceName" data-refresh="@bgp" href="#">@bgp</a></td>
+                        <td><span data-field="RefreshTime"></span></td>
+                        <td><span data-field="ServiceStatus"></span></td>
+                        <td><span data-field="BackgroundProcessExists"></span></td>
+                        <td><span data-field="NautilusProcessResponding"></span></td>
+                        <td><span data-field="NautilusDbSessionExists"></span></td>
+                        <td><span data-field="InstrumentFiles" data-service-name="@bgp"></span></td>
+                        <td><span data-field="BackgroundTasks" data-service-name="@bgp"></span></td>
+                        <td>
+                            @if (ViewBag.IsAdmin)
+                            {
+                                <a href="#" data-restart="@bgp">Restart</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <p id="pNotification" hidden style="text-align:center">
+        <a class="warning" href="mailto:@(ViewBag.To)?subject=Labs vs. Zombies Notification,body=@Url.Action("Index", "Home")">Send a notification about current BGP zombies</a>
+    </p>
+
+    <div class="responsive-table" style="max-height: 240px">
+        <table hidden id="instrumentFiles">
+            <thead>
+                <tr>
+                    <th data-field="Icon"></th>
+                    <th data-field="ServiceName">BGP</th>
+                    <th data-field="InstrumentName">Instrument Name</th>
+                    <th data-field="FileName">File Name</th>
+                    <th data-field="LastWriteTime">Last Write</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="responsive-table" style="max-height: 240px">
+        <table hidden id="backgroundTasks">
+            <thead>
+                <tr>
+                    <th data-field="Icon"></th>
+                    <th data-field="ServiceName">BGP</th>
+                    <th data-field="BackgroundId">Background ID</th>
+                    <th data-field="SessionUser">Session User</th>
+                    <th data-field="ScheduleId">Schedule ID</th>
+                    <th data-field="Parameter">Parameter</th>
+                    <th data-field="Active">Active</th>
+                    <th data-field="TaskType">Task Type</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+
+    <hr />
+
+    <p>
+        Labs vs. Zombies can help you identify zombie background processors in Nautilus LIMS.
+        Click on a BGP name to refresh its status.  Click on a task count or file count (if <span class="warning">1 or more</span>) to see that BGP's pending work.
+        Users with permissions can restart zombie background processors.
+        The list of AD groups with permissions to restart is in the web application's "web.config" file.  Currently that list is:
+
+        <ul>
+            @foreach (var group in ViewBag.AdGroups)
+            {
+                <li>@group</li>
+            }
+        </ul>
+    </p>
+
+    <p>
+        Visitors to the page who are not members of any of the allowed groups have the option of notifying a list also saved in the web.config:
+        <a href="mailto:@(ViewBag.To)?subject=Labs vs. Zombies Notification,body=">Send a notification</a>
+    </p>
+
+    <hr />
+
+    <p>
+        A properly functioning Nautilus BGP will consist of the following:
+        <ol>
+            <li>A windows service, with a <span class="ok">Running</span> status</li>
+            <li>A NautilusBackground.exe process, which is the process of the running service</li>
+            <li>A Nautilus.exe process in a <span class="ok">Responding</span> state (this process is a child process of NautilusBackground.exe and does all the actual work of the BGP)</li>
+            <li>A live Oracle database connection from the above mentioned Nautilus.exe</li>
+        </ol>
+    </p>
+
+    <hr />
+
+    <p>
+        Indications of a zombie BGP (or otherwise non-functioning BGP) include the following:
+        <ol>
+            <li>The windows service is <span class="error">Stopped</span></li>
+            <li>The NautilusBackground.exe process does not have a child Nautilus.exe process</li>
+            <li>The Nautilus.exe process does not have a database connection - this is a typical zombie BGP, where the process is running but never does anything</li>
+            <li>The Nautilus.exe process is not responding (stuck due to bad parsing files, stuck background table records, etc.)</li>
+            <li>The Nautilus.exe process has lost its database connection (due to network interruptions, database issues, etc.)</li>
+            <li>Records are accumulating in the lims.background table (or lims.background_# tables) - not a sure thing, but a possible indication</li>
+            <li>Files are accumulating in instrument parsing folders</li>
+        </ol>
+    </p>
+
+    <hr />
+
+    <p>
+        The Labs vs. Zombies page looks at each of the above mentioned indications to attempt to identify zombie BGPs using the following process:
+        <ol>
+            <li>Get a list of all windows services on the localhost whose name starts with DEFBGP or BGP</li>
+            <li>Check each service in the list for a "Running" status</li>
+            <li>Check that each service's NautilusBackground.exe is running</li>
+            <li>Check that each NautilusBackground.exe process has a child Nautilus.exe process</li>
+            <li>Check that each Nautilus.exe process is responding</li>
+            <li>Check that each Nautilus.exe process has a database connection - connection string is determined by retrieving the Command Line value from the running Nautilus.exe process</li>
+            <li>Login to the database using this connection string and run the query below this list to check if the Windows process ID is found among the Oracle sessions - Note: the connection string's "User ID" parsed from the Nautilus.exe process's command line parameters must have proper "select" grants</li>
+            <li>Using the already-established database connection, check the record count from the lims.background or lims.background_# table for the BGP - non-zero values will show a <span class="warning">count</span> indicator</li>
+            <li>While connected to the database query for a list of all parsing locations assigned to the BGP, and the corresponding filename extensions</li>
+            <li>Inspect the instrument folders to get a count of any accumulated files with a matching filname extension - non-zero values will show a <span class="warning">count</span> indicator</li>
+        </ol>
+        <pre><code>@ViewBag.Sql</code></pre>
+    </p>
+
+    <hr />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var bgpRows = document.querySelectorAll('tr[data-service-name]');
+            for (var i = 0; i < bgpRows.length; i++) {
+                var serviceName = bgpRows[i].getAttribute('data-service-name');
+                request('@Url.Action("GetService", "Home")', 'get', { serviceName: serviceName }, loadBgpInfo);
+
+                bgpRows[i].querySelector('a[data-refresh]').addEventListener('click', function (e) {
+                    request('@Url.Action("GetService", "Home")', 'get', { serviceName: e.target.getAttribute('data-refresh') }, loadBgpInfo);
+                });
+
+                bgpRows[i].querySelector('a[data-restart]').addEventListener('click', function (e) {
+                    request('@Url.Action("RestartBgp", "Home")', 'post', { serviceName: e.target.getAttribute("data-restart") }, loadBgpInfo);
+                });
+            }
+        });
+
+        function request(url, method, data, successCallback) {
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState !== 4) return;
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    if (successCallback) successCallback(xhr.responseText);
+                } else {
+                    alert('The request failed with status ' + xhr.status + ' ' + xhr.statusText);
+                }
+            };
+
+            var encodedData = [];
+            for (var name in data) {
+                encodedData.push(encodeURIComponent(name) + '=' + encodeURIComponent(data[name]));
+            }
+
+            if (method.toLowerCase() == 'get') {
+                url += '?' + encodedData.join('&');
+                xhr.open(method, url, true);
+                xhr.send();
+            } else {
+                data = encodedData.join('&');
+                console.log(data);
+                xhr.open(method, url, true);
+                xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                xhr.send(data);
+            }
+        }
+
+        function loadBgpInfo(bgp) {
+            bgp = JSON.parse(bgp);
+
+            if (bgp.IsZombie) pNotification.removeAttribute('hidden');
+
+            var tr = document.querySelector('tr[data-service-name="' + bgp.ServiceName + '"]');
+            for (var prop in bgp) {
+                var element = tr.querySelector('[data-field="' + prop + '"]');
+                if (element == null) continue;
+
+                if (Array.isArray(bgp[prop])) {
+                    element.innerHTML = bgp[prop].length;
+                    element.setAttribute('data-count', bgp[prop].length);
+                    if (prop == "InstrumentFiles") populateTableRows('instrumentFiles', bgp.ServiceName, bgp[prop]);
+                    if (prop == "BackgroundTasks") populateTableRows('backgroundTasks', bgp.ServiceName, bgp[prop]);
+                }
+                else if (element.tagName != "IMG" && typeof (bgp[prop]) === "boolean") {
+                    element.setAttribute('data-value', bgp[prop] ? "Yes" : "No");
+                    element.innerHTML = bgp[prop] ? "Yes" : "No";
+                } else if (element.tagName == "IMG" && typeof (bgp[prop]) === "boolean") {
+                    element.src = bgp[prop] ? "@Url.Content("~/static/zombiesmall.png")" : "@Url.Content("~/static/flowersmall.png")";
+                } else {
+                    element.innerHTML = bgp[prop];
+                    element.setAttribute('data-value', bgp[prop]);
+                }
+            }
+        }
+
+        function populateTableRows(tableId, serviceName, objectArray) {
+            var rowsToDelete = document.querySelectorAll('#' + tableId + ' > tbody > tr');
+            for (var i = 0; i < rowsToDelete.length; i++) {
+                rowsToDelete[i].parentElement.removeChild(rowsToDelete[i]);
+            }
+
+            var cellsToCreate = [];
+            document.querySelectorAll('#' + tableId + ' th[data-field]').forEach(x => cellsToCreate.push(x.getAttribute("data-field")));
+            var tbody = document.querySelector('#' + tableId + ' tbody');
+
+            for (var i = 0; i < objectArray.length; i++) {
+                var tr = document.createElement('tr');
+                tr.setAttribute('service-name', serviceName);
+                for (var j = 0; j < cellsToCreate.length; j++) {
+                    var td = document.createElement('td');
+                    if (cellsToCreate[j] == "Icon") td.innerHTML = '<img src="@Url.Content("~/static/")' + tableId + '.png" />';
+                    if (cellsToCreate[j] in objectArray[i]) td.innerHTML = objectArray[i][cellsToCreate[j]];
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+
+            var rowCount = document.querySelectorAll('#' + tableId + ' > tbody > tr').length;
+            if (rowCount == 0)
+                document.getElementById(tableId).setAttribute('hidden', true);
+            else
+                document.getElementById(tableId).removeAttribute('hidden');
+
+        }
+    </script>
+</body>
+</html>

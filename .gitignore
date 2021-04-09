@@ -137,6 +137,9 @@ _TeamCity*
 .axoCover/*
 !.axoCover/settings.json
 
+# Precompiled web folder needs to get stored, because reasons
+!LabsVsZombies/precompiledweb/*
+
 # Visual Studio code coverage results
 *.coverage
 *.coveragexml

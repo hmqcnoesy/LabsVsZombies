@@ -1,0 +1,110 @@
+﻿body {
+    font-family: Calibri, Arial, Helvetica, sans-serif;
+}
+
+body > * {
+    margin: 2em auto;
+    max-width: 900px;
+}
+
+hr {
+    border-top: 1px solid green;
+}
+
+a, a:hover {
+    color: #007d00;
+}
+
+header > a, header > a:hover {
+    background-color: #007d00;
+    color:white;
+    font-size: 150%;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 3px;
+}
+
+header {
+    padding-left: 1em;
+    height: 40px;
+    background-color: black;
+    margin: 0;
+    max-width: unset;
+}
+
+header img {
+    height: 100%;
+}
+pre {
+    font-family: Consolas, monospace;
+    background-color: rgba(0, 125, 0, 0.5);
+    padding: 6px;
+    border-radius: 3px;
+}
+
+div.responsive-table {
+    overflow: auto;
+}
+
+table {
+    width: 100%;
+    font-size: 85%;
+    text-align: center;
+    border-collapse: collapse;
+    padding: 1em 0;
+}
+
+thead tr {
+    border-bottom: 2px solid #007d00;
+}
+
+tbody tr {
+    border-bottom: 1px solid #007d00;
+}
+
+td, th {
+    padding: 4px;
+}
+
+    header a {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+.ok, .error, .warning, .info, [data-field] {
+    border-radius: 3px;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.ok, .ok:hover, .ok:link, [data-value=Yes], [data-value=Running] {
+    background-color: #007d00;
+    color:white;
+}
+
+.error, .error:hover, .error:link, [data-value=No], [data-value=Stopped] {
+    background-color: #d64045;
+    color:white;
+}
+
+.warning, .warning:hover, .warning:link, [data-count]:not([data-count='0']) {
+    background-color: #e7e247;
+    color:black;
+}
+
+.info, .info:hover, info:link {
+    background-color: #5c80bc;
+    color:white;
+}
+
+button, button:hover, button:active {
+    background-color: #5c80bc;
+    border: 1px solid black;
+    border-radius: 3px;
+    color: white;
+    padding: 4px 8px;
+    text-align: center;
+    line-height: normal;
+    font-size: inherit;
+    cursor: pointer;
+}
