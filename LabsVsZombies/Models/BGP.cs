@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data.OracleClient;
 using System.Diagnostics;
 using System.IO;
@@ -108,10 +109,13 @@ namespace LabsVsZombies.Models
         // public method for documentation purposes, we show the SQL directly on the page.
         public static string GetDbQuery()
         {
+            var isOracleRac = ConfigurationManager.AppSettings["isOracleRac"].ToUpper().Trim() == "YES";
+            var view = isOracleRac ? "gv$session" : "v$session";
+
             return "select count(v.process)\r\n"
                     + "from lims.current_session cs\r\n"
                     + "join lims_session s on cs.session_id = s.session_id\r\n"
-                    + "join v$session v on v.audsid = cs.database_session_id\r\n"
+                    + $"join {view} v on v.audsid = cs.database_session_id\r\n"
                     + "where s.session_type = 'B'\r\n"
                     + "and v.process like :windows_session_id || ':%'";
         }

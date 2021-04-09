@@ -244,7 +244,9 @@
             }
 
             var cellsToCreate = [];
-            document.querySelectorAll('#' + tableId + ' th[data-field]').forEach(x => cellsToCreate.push(x.getAttribute("data-field")));
+            var dataFields = document.querySelectorAll('#' + tableId + ' th[data-field]');
+            for (var i = 0; i < dataFields.length; i++)
+                cellsToCreate.push(dataFields[i].getAttribute("data-field"));
             var tbody = document.querySelector('#' + tableId + ' tbody');
 
             for (var i = 0; i < objectArray.length; i++) {
