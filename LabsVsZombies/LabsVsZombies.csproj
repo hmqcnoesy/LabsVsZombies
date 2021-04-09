@@ -130,8 +130,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
+    <Content Include="static\favicon-16x16.png" />
+    <Content Include="static\favicon-32x32.png" />
     <Content Include="static\flower.png" />
     <Content Include="static\flowersmall.png" />
     <Content Include="static\instrumentFiles.png" />
@@ -149,12 +150,9 @@
     </Content>
     <Content Include="Views\Web.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="App_Data\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="packages.config" />
-    <Content Include="Views\Home\Info.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
   </ItemGroup>
   <PropertyGroup>

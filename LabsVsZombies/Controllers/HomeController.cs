@@ -17,22 +17,12 @@ namespace LabsVsZombies.Controllers
         {
             var serviceNames = BGP.GetLocalhostBgpNames();
             var allowedGroups = ConfigurationManager.AppSettings["allowedGroups"];
-            ViewBag.AdGroups = allowedGroups.Split(',').ToList();
-            ViewBag.IsAdmin = true;// ViewBag.AdGroups.Contains(User.Identity.Name);
+            var adGroups = allowedGroups.Split(',').ToList();
+            ViewBag.AdGroups = adGroups;
+            ViewBag.IsAdmin = adGroups.Any(g => User.IsInRole(g));
             ViewBag.To = ConfigurationManager.AppSettings["notificationEmails"];
             ViewBag.Sql = BGP.GetDbQuery();
             return View(serviceNames);
-        }
-
-
-        public ActionResult Info(string serviceName)
-        {
-            var bgp = BGP.GetLocalhostBGP(serviceName);
-            var allowedGroups = ConfigurationManager.AppSettings["allowedGroups"];
-            var adGroups = allowedGroups.Split(',').ToList();
-            ViewBag.IsAdmin = adGroups.Any(g => User.IsInRole(g));
-            ViewBag.To = ConfigurationManager.AppSettings["notificationEmails"];
-            return View(bgp);
         }
 
 
@@ -56,7 +46,7 @@ namespace LabsVsZombies.Controllers
                 var bgp = BGP.GetLocalhostBGP(serviceName);
                 if (bgp == null) return HttpNotFound();
                 bgp.RestartBgp();
-                System.Threading.Thread.Sleep(500); // just give it a bit before checking on nautilus.exe db connection status, etc.
+                System.Threading.Thread.Sleep(1000); // just give it a bit before checking on nautilus.exe db connection status, etc.
                 return Json(BGP.GetLocalhostBGP(serviceName));
             }
             catch (Exception ex)
