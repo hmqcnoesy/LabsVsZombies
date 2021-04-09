@@ -35,6 +35,12 @@ header {
 header img {
     height: 100%;
 }
+pre {
+    font-family: Consolas, monospace;
+    background-color: rgba(0, 125, 0, 0.5);
+    padding: 6px;
+    border-radius: 3px;
+}
 
 div.responsive-table {
     overflow: auto;

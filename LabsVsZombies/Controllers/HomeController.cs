@@ -20,19 +20,8 @@ namespace LabsVsZombies.Controllers
             ViewBag.AdGroups = allowedGroups.Split(',').ToList();
             ViewBag.IsAdmin = true;// ViewBag.AdGroups.Contains(User.Identity.Name);
             ViewBag.To = ConfigurationManager.AppSettings["notificationEmails"];
+            ViewBag.Sql = BGP.GetDbQuery();
             return View(serviceNames);
-        }
-
-
-        public ActionResult IndexOLD()
-        {
-            var bgps = BGP.GetLocalhostBGPs();
-            var allowedGroups = ConfigurationManager.AppSettings["allowedGroups"];
-            var adGroups = allowedGroups.Split(',').ToList();
-            ViewBag.IsAdmin = adGroups.Any(g => User.IsInRole(g));
-            ViewBag.AdGroups = adGroups;
-            ViewBag.To = ConfigurationManager.AppSettings["notificationEmails"];
-            return View(bgps);
         }
 
 
@@ -67,6 +56,7 @@ namespace LabsVsZombies.Controllers
                 var bgp = BGP.GetLocalhostBGP(serviceName);
                 if (bgp == null) return HttpNotFound();
                 bgp.RestartBgp();
+                System.Threading.Thread.Sleep(500); // just give it a bit before checking on nautilus.exe db connection status, etc.
                 return Json(BGP.GetLocalhostBGP(serviceName));
             }
             catch (Exception ex)

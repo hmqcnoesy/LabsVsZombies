@@ -28,6 +28,7 @@ namespace LabsVsZombies.Models
         public bool NautilusProcessResponding { get { return _nautilusProcess == null ? false : _nautilusProcess.Responding; } }
 
         public bool IsZombie { get { return !NautilusProcessResponding || !NautilusDbSessionExists;  } }
+        public string RefreshTime { get; set; }
         public List<BackgroundTask> BackgroundTasks { get; private set; } = new List<BackgroundTask>();
         public List<InstrumentFile> InstrumentFiles { get; private set; } = new List<InstrumentFile>();
 
@@ -39,7 +40,7 @@ namespace LabsVsZombies.Models
             if (!string.IsNullOrEmpty(serviceName)) services = services.Where(s => s.DisplayName == serviceName);
             foreach (var service in services)
             {
-                var bgp = new BGP() { _service = service };
+                var bgp = new BGP() { _service = service, RefreshTime = DateTime.Now.ToString("h:mm:ss.f") };
                 bgp.BgpId = service.ServiceName.Split('#').Last();
                 bgps.Add(bgp);
 
@@ -104,17 +105,24 @@ namespace LabsVsZombies.Models
         }
 
 
+        // public method for documentation purposes, we show the SQL directly on the page.
+        public static string GetDbQuery()
+        {
+            return "select count(v.process)\r\n"
+                    + "from lims.current_session cs\r\n"
+                    + "join lims_session s on cs.session_id = s.session_id\r\n"
+                    + "join v$session v on v.audsid = cs.database_session_id\r\n"
+                    + "where s.session_type = 'B'\r\n"
+                    + "and v.process like :windows_session_id || ':%'";
+        }
+
+
         private void PopulateDbInfo()
         {
             using (var connection = new OracleConnection(this._nautilusConnectionString))
             {
                 connection.Open();
-                var sql = "select count(v.process) "
-                    + "from lims.current_session cs "
-                    + "join lims_session s on cs.session_id = s.session_id "
-                    + "join v$session v on v.audsid = cs.database_session_id "
-                    + "where s.session_type = 'B' "
-                    + "and v.process like :windows_session_id || ':%'";
+                var sql = BGP.GetDbQuery();
                 var cmd = new OracleCommand(sql, connection);
                 cmd.Parameters.AddWithValue(":windows_session_id", this._nautilusProcess.Id);
                 this.NautilusDbSessionExists = (decimal)cmd.ExecuteScalar() > 0;
@@ -130,6 +138,7 @@ namespace LabsVsZombies.Models
                 {
                     this.BackgroundTasks.Add(new BackgroundTask
                     {
+                        ServiceName = this.ServiceName,
                         BackgroundId = reader.GetDecimal(0),
                         SessionUser = reader.IsDBNull(1) ? string.Empty : reader[1].ToString(),
                         ScheduleId = reader.IsDBNull(2) ? null : (decimal?)reader.GetDecimal(2),
@@ -157,9 +166,11 @@ namespace LabsVsZombies.Models
                         {
                             this.InstrumentFiles.Add(new InstrumentFile
                             {
+                                ServiceName = this.ServiceName,
                                 InstrumentName = reader[0].ToString(),
-                                FileName = file
-                            });
+                                FileName = file,
+                                LastWriteTime = File.GetLastWriteTime(file).ToString("M/d/yy HH:mm")
+                            }); ;
                         }
                     }
                     catch (Exception ex)
@@ -174,7 +185,11 @@ namespace LabsVsZombies.Models
         public void RestartBgp()
         {
             if (this._nautilusProcess != null) this._nautilusProcess.Kill();
-            if (this._service.Status != ServiceControllerStatus.Stopped) this._service.Stop();
+            if (this._service.Status != ServiceControllerStatus.Stopped)
+            {
+                this._service.Stop();
+                this._service.WaitForStatus(ServiceControllerStatus.Stopped, new TimeSpan(0, 0, 5));
+            }
             this._service.Start();
         }
     }

@@ -127,7 +127,6 @@
     <Compile Include="Models\BackgroundTask.cs" />
     <Compile Include="Models\BGP.cs" />
     <Compile Include="Models\InstrumentFile.cs" />
-    <Compile Include="Models\NautilusDb.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -135,8 +134,10 @@
     <Content Include="Global.asax" />
     <Content Include="static\flower.png" />
     <Content Include="static\flowersmall.png" />
+    <Content Include="static\instrumentFiles.png" />
     <Content Include="static\lvz.css" />
     <Content Include="static\normalize.css" />
+    <Content Include="static\backgroundTasks.png" />
     <Content Include="static\zombie.png" />
     <Content Include="static\zombiesmall.png" />
     <Content Include="Web.config" />
@@ -147,7 +148,6 @@
       <DependentUpon>Web.config</DependentUpon>
     </Content>
     <Content Include="Views\Web.config" />
-    <Content Include="Views\Home\IndexOLD.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

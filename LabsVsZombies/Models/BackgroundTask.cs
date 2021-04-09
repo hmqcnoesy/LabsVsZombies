@@ -7,6 +7,7 @@ namespace LabsVsZombies.Models
 {
     public class BackgroundTask
     {
+        public string ServiceName { get; set; }
         public decimal BackgroundId { get; set; }
         public string SessionUser { get; set; }
         public decimal? ScheduleId { get; set; }
