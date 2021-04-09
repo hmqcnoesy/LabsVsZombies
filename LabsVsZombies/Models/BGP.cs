@@ -113,8 +113,8 @@ namespace LabsVsZombies.Models
             var view = isOracleRac ? "gv$session" : "v$session";
 
             return "select count(v.process)\r\n"
-                    + "from lims.current_session cs\r\n"
-                    + "join lims_session s on cs.session_id = s.session_id\r\n"
+                    + "from lims_sys..current_session cs\r\n"
+                    + "join lims_sys.lims_session s on cs.session_id = s.session_id\r\n"
                     + $"join {view} v on v.audsid = cs.database_session_id\r\n"
                     + "where s.session_type = 'B'\r\n"
                     + "and v.process like :windows_session_id || ':%'";
