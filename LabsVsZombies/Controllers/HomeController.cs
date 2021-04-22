@@ -26,6 +26,7 @@ namespace LabsVsZombies.Controllers
         }
 
 
+        [OutputCache(NoStore = true, Duration = 0)]
         public ActionResult GetService(string serviceName)
         {
             var bgp = BGP.GetLocalhostBGP(serviceName);

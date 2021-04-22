@@ -4,6 +4,7 @@
 
 <html>
 <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta name="viewport" content="width=device-width" />
     <title>Labs vs. Zombies</title>
     <link rel="icon" type="image/png" href="~/static/favicon-32x32.png" sizes="32x32" />
@@ -174,9 +175,12 @@
                     request('@Url.Action("GetService", "Home")', 'get', { serviceName: e.target.getAttribute('data-refresh') }, loadBgpInfo);
                 });
 
-                bgpRows[i].querySelector('a[data-restart]').addEventListener('click', function (e) {
-                    request('@Url.Action("RestartBgp", "Home")', 'post', { serviceName: e.target.getAttribute("data-restart") }, loadBgpInfo);
-                });
+                var restartButton = bgpRows[i].querySelector('a[data-restart]');
+                if (restartButton) {
+                    restartButton.addEventListener('click', function (e) {
+                        request('@Url.Action("RestartBgp", "Home")', 'post', { serviceName: e.target.getAttribute("data-restart") }, loadBgpInfo);
+                    });
+                }
             }
         });
 
